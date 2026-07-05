@@ -6,6 +6,8 @@ import numpy as np
 # Tache (Fleck)       Seuillage (Threshold) Une tache = zone anormalement claire/sombre
 # Texture (Strukturfehler) Variance locale Zone rugueuse = variance élevée
 
+
+# 1er Fall : Rayure (Kratzer)    Filtre Canny Une rayure = contour fort et linéaire
 # 1. Charge test_images/scratch/scratch_001.png
 # image = cv2.imread ("test_images/test_images/scratch/scratch_001.png")
 image = cv2.imread("test_images/test_images/ok/ok_001.png")
@@ -20,7 +22,7 @@ edge = cv2.Canny(gray, 50, 150)
 # → texte rouge si NICHT OK, vert si OK
 SEUIL_KRATZER = 100  # pixels blancs
 if np.sum(edge > 0) > SEUIL_KRATZER:
-    résultat = "NICHT OK, Kratzer détecté"
+    résultat = "NICHT OK — Kratzer erkannt"
     image_verdict = cv2.putText(image, f"{résultat}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 else:
     résultat = "OK"
