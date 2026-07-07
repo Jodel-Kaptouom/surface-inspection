@@ -6,41 +6,111 @@ import numpy as np
 # Tache (Fleck)       Seuillage (Threshold) Une tache = zone anormalement claire/sombre
 # Texture (Strukturfehler) Variance locale Zone rugueuse = variance élevée
 
+# Zusammenfassung aller Lösungen : detect_kratzer, detect_fleck, detect_strukturfehler
 
-# 3te Fall : Texture (Strukturfehler) Variance locale Zone rugueuse = variance élevée
-# Surface lisse  → pixels similaires entre eux → variance faible = Zone lisse :    [60, 61, 59, 62, 60]  → valeurs proches   → variance faible
-# Surface rugueuse → pixels très différents    → variance élevée = Zone rugueuse : [60, 90, 30, 85, 25]  → valeurs dispersées → variance élevée
+SEUIL_KRATZER = 100
 
-BLOCK_SIZE   = 4    # taille de chaque zone analysée
-SEUIL_STRUCT = 200   # variance au-dessus = Strukturfehler
-
-# 1. Charge test_images/texture_defect/texture_defect_001.png
-image = cv2.imread("test_images/test_images/texture_defect/texture_defect_001.png")
-# image = cv2.imread("test_images/test_images/ok/ok_001.png")
-# 2. Convertit en niveaux de gris
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-# 3. Parcourt l'image par blocs de 16x16 pixels
-#    → double boucle for sur y et x
-#    → for y in range(0, h, BLOCK_SIZE):
-#         for x in range(0, w, BLOCK_SIZE):
-BlocError = 0
-for y in range(0, gray.shape[0], BLOCK_SIZE):
-    for x in range(0, gray.shape[1], BLOCK_SIZE):
-        # 4. Pour chaque bloc :
-        #    → extraire la région : region = gray[y:y+BLOCK_SIZE, x:x+BLOCK_SIZE]
-        region = gray[y:y+BLOCK_SIZE, x:x+BLOCK_SIZE]
-        #    → calculer variance avec cv2.meanStdDev()
-        mean, stddev = cv2.meanStdDev(region)
-        variance = stddev[0][0] ** 2
-        #    → si variance > SEUIL_STRUCT → dessiner rectangle rouge sur l'image
-        if variance > SEUIL_STRUCT:
-            cv2.rectangle(image, (x, y), (x+BLOCK_SIZE, y+BLOCK_SIZE), (0, 0, 255), 1)
-            BlocError += 1
-# 5. Afficher l'image avec les zones suspectes encadrées en rouge
-cv2.imshow("zones suspectes", image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-# 6. Afficher dans le terminal : nombre de blocs suspects
-print("Nombre de blocs suspects :", BlocError)
-
-
+def detect_kratzer(image):
+    """
+    Detect scratch defects (Kratzer) using Canny edge detection.
+    
+    Args:
+        image: BGR image (numpy array)
+    Returns:
+        dict with keys: defect_type, detected, pixels, verdict
+    """
+    # 1. Convertir en gris
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # 2. Appliquer Canny (50, 150)
+    edges = cv2.Canny(gray, 50,150)
+    # 3. Compter pixels blancs
+    white_pixels = np.sum (edges>0)
+    # 4. Décision : detected = pixels > SEUIL_KRATZER
+    if white_pixels > SEUIL_KRATZER:
+        detected = True
+        verdict = "NICHT OK- Kratzer erkannt"
+    else:
+        detected = False
+        verdict = "OK"
+    # 5. Retourner le dictionnaire :
+    return {
+        "defect_type": "Kratzer",
+        "detected": detected,
+        "pixels": white_pixels,
+        "verdict": verdict
+    }
+    #    {
+    #        "defect_type": "Kratzer",
+    #        "detected":    True/False,
+    #        "pixels":      nombre de pixels,
+    #        "verdict":     "NICHT OK - Kratzer erkannt" ou "OK"
+    #    }
+# Test
+def detect_fleck(image):
+    """
+    Detect spot defects (Fleck) using thresholding.
+    
+    Args:
+        image: BGR image (numpy array)
+    Returns:
+        dict with keys: defect_type, detected, pixels, verdict
+    """
+    # 1. Convertir en gris
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # 2. Appliquer un seuillage adaptatif (ou global)
+    _, thresh = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+    # 3. Compter pixels blancs
+    white_pixels = np.sum(thresh > 0)
+    # 4. Décision : detected = pixels > SEUIL_FLECK (à définir)
+    SEUIL_FLECK = 500
+    if white_pixels > SEUIL_FLECK:
+        detected = True
+        verdict = "NICHT OK - Fleck erkannt"
+    else:
+        detected = False
+        verdict = "OK"
+    # 5. Retourner le dictionnaire :
+    return {
+        "defect_type": "Fleck",
+        "detected": detected,
+        "pixels": white_pixels,
+        "verdict": verdict
+    }
+def detect_strukturfehler(image):
+    """
+    Detect texture defects (Strukturfehler) using local variance.
+    
+    Args:
+        image: BGR image (numpy array)
+    Returns:
+        dict with keys: defect_type, detected, pixels, verdict
+    """
+    BLOCK_SIZE   = 16    # taille de chaque zone analysée
+    SEUIL_STRUCT = 200   # variance au-dessus = Strukturfehler
+    # 1. Convertir en gris
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # 2. Calculer la variance locale (par exemple avec un filtre de Sobel ou un filtre de Laplacien)
+    BlocError = 0
+    for y in range (0, gray.shape[0], BLOCK_SIZE):
+        for x in range (0, gray.shape[1], BLOCK_SIZE):
+            region = gray[y:y+BLOCK_SIZE, x:x+BLOCK_SIZE]
+            mean, stddev = cv2.meanStdDev(region)
+            variance = stddev[0][0] ** 2
+            if variance > SEUIL_STRUCT:
+                BlocError += 1
+                detected = True
+                verdict = "NICHT OK - Strukturfehler erkannt"
+            else:
+                detected = False
+                verdict = "OK"
+    # 3. Décision : detected = variance > SEUIL_STRUKTURFEHLER (à définir)
+    return {
+        "defect_type": "Strukturfehler",
+        "detected": detected,
+        "blockserror": int(BlocError),
+        "verdict": verdict
+    }
+if __name__ == "__main__":
+    image = cv2.imread("test_images/test_images/scratch/scratch_001.png")
+    result = detect_kratzer(image)
+    print(result)
