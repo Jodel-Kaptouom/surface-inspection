@@ -122,6 +122,29 @@ def add_texture_defect(image):
 
     return result
 
+def add_color_defect(image):
+    """
+    Add a color deviation defect (Farbfehler).
+    Simulates a local color shift — e.g. brownish patch on dark surface.
+    """
+    result = image.copy()
+    h, w   = result.shape[:2]
+
+    # Zone avec teinte différente
+    x  = np.random.randint(50, w - 150)
+    y  = np.random.randint(50, h - 150)
+    bw = np.random.randint(60, 130)
+    bh = np.random.randint(60, 130)
+
+    # Patch brun/orangé — BGR = (20, 80, 120)
+    result[y:y+bh, x:x+bw] = (0, 0, 200)
+
+    # # Bords doux
+    # result = cv2.GaussianBlur(result, (7, 7), 0)
+    # result[y:y+bh, x:x+bw] = cv2.GaussianBlur(
+    #     result[y:y+bh, x:x+bw], (15, 15), 0
+    # )
+    return result
 
 # ---------------------------------------------------------------------------
 # Image set generator
@@ -144,6 +167,7 @@ def generate_dataset(output_dir=OUTPUT_DIR, n_per_class=5):
         "spot":            lambda img: add_spot(img, n_spots=np.random.randint(1, 3)),
         "texture_defect":  lambda img: add_texture_defect(img),
         "combined":        lambda img: add_spot(add_scratch(add_texture_defect(img))),
+        "color_defect":   lambda img: add_color_defect(img),   # ← nouveau
     }
 
     total = 0
