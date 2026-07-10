@@ -1,7 +1,7 @@
 import cv2 
 import json
 import os
-image = cv2.imread("test_images/test_images/ok/ok_001.png")
+image = cv2.imread("test_images/mvtec/metal_nut/test/good/000.png")
 # cv2.imshow("surface inspection", image)
 # n = int (input ("combien de ROI voulez-vous sélectionner ? "))
 # for i in range (n):

@@ -104,23 +104,45 @@ def print_report(results):
         print(f"  - Global Verdict: {global_verdict}\n")
     pass
 
-if __name__ == "__main__":
-    # 1. Charger l'image
-    image = load_image("test_images/color_defect/color_defect_001.png")
+# if __name__ == "__main__":
+#     # 1. Charger l'image
+#     image = load_image("test_images/color_defect/color_defect_001.png")
 
-    # 2. Charger les ROIs
+#     # 2. Charger les ROIs
+#     rois = load_rois("results/rois.json")
+
+#     # 3. Lancer l'inspection
+#     results = run_inspection(image, rois)
+
+#     # 4. Annoter l'image
+#     image_annote = annotate_image(image, rois, results)
+
+#     # 5. Afficher le rapport dans le terminal
+#     print_report(results)
+
+#     # 6. Afficher l'image annotée
+#     cv2.imshow("Surface — Inspection", image_annote)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
+if __name__ == "__main__":
+
+    images_to_test = [
+        ("good",    "test_images/mvtec/metal_nut/test/good/000.png"),
+        ("scratch", "test_images/mvtec/metal_nut/test/scratch/000.png"),
+        ("color",   "test_images/mvtec/metal_nut/test/color/000.png"),
+        ("bent",    "test_images/mvtec/metal_nut/test/bent/000.png"),
+    ]
     rois = load_rois("results/rois.json")
 
-    # 3. Lancer l'inspection
-    results = run_inspection(image, rois)
+    for name, path in images_to_test:
+        print(f"\n{'='*50}")
+        print(f"Image: {name}")
+        print('='*50)
+        image        = load_image(path)
+        results      = run_inspection(image, rois)
+        image_annote = annotate_image(image.copy(), rois, results)
+        print_report(results)
+        cv2.imshow(f"Inspection - {name}", image_annote)
+        cv2.waitKey(0)
 
-    # 4. Annoter l'image
-    image_annote = annotate_image(image, rois, results)
-
-    # 5. Afficher le rapport dans le terminal
-    print_report(results)
-
-    # 6. Afficher l'image annotée
-    cv2.imshow("Surface — Inspection", image_annote)
-    cv2.waitKey(0)
     cv2.destroyAllWindows()
