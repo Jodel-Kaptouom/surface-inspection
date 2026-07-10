@@ -2,10 +2,10 @@ import cv2
 import numpy as np
 import json
 import os
-import sys
-sys.path.append(os.path.dirname(__file__))  # ajoute src/ au path
+# import sys
+# sys.path.append(os.path.dirname(__file__))  # ajoute src/ au path
 from defect_detector import detect_kratzer, detect_fleck, detect_strukturfehler
-
+from color_analyzer import detect_farbfehler
 def load_image(path):
     """Charge et retourne une image BGR"""
     image = cv2.imread(path)
@@ -44,7 +44,8 @@ def run_inspection(image, rois):
         kratzer_result = detect_kratzer(region)
         fleck_result = detect_fleck(region)
         struktur_result = detect_strukturfehler(region)
-        global_verdict ="NICHT OK" if ( kratzer_result["detected"] or fleck_result["detected"]   or struktur_result["detected"]) else "OK"
+        farbfehler_result = detect_farbfehler(region)
+        global_verdict ="NICHT OK" if ( kratzer_result["detected"] or fleck_result["detected"]   or struktur_result["detected"] or farbfehler_result["detected"]) else "OK"
 
         # 4. Construire un dict résultat pour cette ROI :
         results.append({
@@ -52,6 +53,7 @@ def run_inspection(image, rois):
                "kratzer":  kratzer_result,
                "fleck":    fleck_result,
                "struktur":  struktur_result,
+               "farbfehler": farbfehler_result,
                "global":   global_verdict
            })
         # 5. Ajouter à results
@@ -92,18 +94,19 @@ def print_report(results):
         kratzer_verdict = result["kratzer"]["verdict"]
         fleck_verdict = result["fleck"]["verdict"]
         struktur_verdict = result["struktur"]["verdict"]
+        farbfehler_verdict = result["farbfehler"]["verdict"]
         global_verdict = result["global"]
-
         print(f"ROI {roi_id}:")
         print(f"  - Kratzer: {kratzer_verdict}")
         print(f"  - Fleck: {fleck_verdict}")
         print(f"  - Strukturfehler: {struktur_verdict}")
+        print(f"  - Farbfehler: {farbfehler_verdict}")
         print(f"  - Global Verdict: {global_verdict}\n")
     pass
 
 if __name__ == "__main__":
     # 1. Charger l'image
-    image = load_image("test_images/test_images/scratch/scratch_001.png")
+    image = load_image("test_images/color_defect/color_defect_001.png")
 
     # 2. Charger les ROIs
     rois = load_rois("results/rois.json")
